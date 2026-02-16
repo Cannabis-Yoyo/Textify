@@ -1,4 +1,4 @@
-# app.py (FINAL – STABLE – DEPLOYABLE)
+# app.py (FINAL – STABLE – DEPLOYABLE, UTF-8 PDF)
 
 import os
 import math
@@ -68,24 +68,32 @@ max_length = st.sidebar.slider("Maximum Summary Length", 50, 500, 150)
 min_length = st.sidebar.slider("Minimum Summary Length", 25, 300, 50)
 
 # -----------------------------
-# PDF Generator
+# PDF Generator (UTF-8 safe)
 # -----------------------------
 def generate_pdf(result):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Helvetica", size=11)
+    
+    # Use DejaVu font to support Unicode
+    pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
+    pdf.set_font("DejaVu", size=11)
+
+    def clean(text):
+        if not text:
+            return ""
+        return str(text)
 
     pdf.cell(0, 10, "TEXTIFY ANALYSIS REPORT", ln=True)
     pdf.ln(5)
 
-    pdf.multi_cell(0, 8, result["summary"])
+    pdf.multi_cell(0, 8, clean(result.get("summary", "")))
     pdf.ln(4)
 
-    s = result["sentiment"]
-    pdf.cell(0, 8, f"Sentiment: {s['overall_sentiment'].capitalize()}", ln=True)
-    pdf.cell(0, 8, f"Confidence: {s['confidence']*100:.1f}%", ln=True)
+    sentiment = result.get("sentiment", {})
+    pdf.cell(0, 8, f"Sentiment: {clean(sentiment.get('overall_sentiment',''))}", ln=True)
+    pdf.cell(0, 8, f"Confidence: {sentiment.get('confidence',0)*100:.1f}%", ln=True)
 
-    return pdf.output(dest="S").encode("latin-1")
+    return pdf.output(dest="S").encode("utf-8")
 
 # -----------------------------
 # Analyze Button
@@ -105,10 +113,10 @@ if st.sidebar.button("🚀 Analyze Text"):
         )
 
         st.markdown('<div class="section-header">Executive Summary</div>', unsafe_allow_html=True)
-        st.markdown(f"<div class='card'>{result['summary']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'>{result.get('summary','')}</div>", unsafe_allow_html=True)
 
         st.markdown('<div class="section-header">Sentiment Analysis</div>', unsafe_allow_html=True)
-        st.markdown(f"<div class='card'>{result['sentiment']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'>{result.get('sentiment','')}</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
 
@@ -396,6 +404,7 @@ if st.sidebar.button("🚀 Analyze Text"):
 #             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
 #         st.success("Analysis completed successfully.")
+
 
 
 
