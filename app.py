@@ -227,15 +227,13 @@ def generate_pdf(result):
     pdf = FPDF()
     pdf.add_page()
     
-    # Use DejaVu font to support Unicode
+    # DejaVu font for Unicode support
     font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
     pdf.add_font('DejaVu', '', font_path, uni=True)
     pdf.set_font("DejaVu", size=11)
 
     def clean(text):
-        if not text:
-            return ""
-        return str(text)
+        return str(text) if text else ""
 
     # Header
     pdf.set_font("DejaVu", "B", 16)
@@ -349,4 +347,3 @@ if st.sidebar.button("🚀 Analyze Text"):
             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
-
