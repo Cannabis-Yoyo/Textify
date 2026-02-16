@@ -1,16 +1,24 @@
+# ==============================
+# app.py (Updated & Deploy-Ready)
+# ==============================
+
 import os
 import math
+from datetime import datetime
+import streamlit as st
+from fpdf import FPDF
+import nltk
 
-# Create local folder for NLTK
+# -----------------------------
+# Step 1: NLTK setup (must be first)
+# -----------------------------
 nltk_data_dir = os.path.join(os.getcwd(), "nltk_data")
 os.makedirs(nltk_data_dir, exist_ok=True)
-
-# Make sure NLTK uses this folder first
 nltk.data.path.insert(0, nltk_data_dir)
 
-# Download only if missing
-required = ["punkt", "vader_lexicon", "stopwords"]
-for pkg in required:
+# Download required NLTK packages if missing
+required_packages = ["punkt", "vader_lexicon", "stopwords"]
+for pkg in required_packages:
     try:
         if pkg == "punkt":
             nltk.data.find("tokenizers/punkt")
@@ -21,95 +29,44 @@ for pkg in required:
     except LookupError:
         nltk.download(pkg, download_dir=nltk_data_dir, quiet=True)
 
+# -----------------------------
+# Step 2: Import Textify AFTER NLTK setup
+# -----------------------------
+from textify import Textify  # Your NLP processing module
 
-from textify import Textify
-from fpdf import FPDF
-import streamlit as st
-import math
-from datetime import datetime
-import nltk
-
-
-
-# -------------------------------------------------
-# Hugging Face token (optional for faster model downloads)
-# -------------------------------------------------
+# -----------------------------
+# Hugging Face token (optional)
+# -----------------------------
 if "HF_TOKEN" in st.secrets:
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = st.secrets["HF_TOKEN"]
 
-# -------------------------------------------------
+# -----------------------------
 # Streamlit App Configuration
-# -------------------------------------------------
+# -----------------------------
 st.set_page_config(
     page_title="Textify | Text Analysis Platform",
     page_icon="📄",
     layout="wide"
 )
 
-# -------------------------------------------------
+# -----------------------------
 # CSS Styling
-# -------------------------------------------------
+# -----------------------------
 st.markdown("""
 <style>
-/* Page Border */
-[data-testid="stAppViewContainer"] {
-    background-color: #F8F9FA;
-    border: 2px solid #0B3C5D;
-    border-radius: 12px;
-    padding: 24px;
-}
-
-/* Title Banner */
-.title-banner {
-    background-color: #0B3C5D;
-    color: white;
-    padding: 22px 26px;
-    border-radius: 10px;
-    border-left: 8px solid #1C7ED6;
-    margin-bottom: 25px;
-}
-.title-banner h1 { margin:0; font-size:34px; }
-.title-banner p { margin-top:6px; font-size:15px; opacity:0.9; }
-
-/* Section Header */
-.section-header {
-    font-size: 22px;
-    font-weight: 600;
-    color: #0B3C5D;
-    margin-top: 28px;
-    margin-bottom: 8px;
-}
-
-/* Card */
-.card {
-    background-color: #FFFFFF;
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #DEE2E6;
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.06);
-    margin-bottom: 18px;
-}
-
-/* Download Button */
-div.stDownloadButton > button {
-    background-color: #1C7ED6;
-    color: white;
-    border-radius: 6px;
-    padding: 10px 18px;
-    font-weight: 600;
-    border: none;
-    transition: all 0.25s ease-in-out;
-}
-div.stDownloadButton > button:hover {
-    background-color: #1864AB;
-    transform: scale(1.03);
-}
+[data-testid="stAppViewContainer"] { background-color: #F8F9FA; border: 2px solid #0B3C5D; border-radius: 12px; padding: 24px; }
+.title-banner { background-color: #0B3C5D; color: white; padding: 22px 26px; border-radius: 10px; border-left: 8px solid #1C7ED6; margin-bottom: 25px; }
+.title-banner h1 { margin:0; font-size:34px; } .title-banner p { margin-top:6px; font-size:15px; opacity:0.9; }
+.section-header { font-size:22px; font-weight:600; color:#0B3C5D; margin-top:28px; margin-bottom:8px; }
+.card { background-color:#FFFFFF; padding:20px; border-radius:8px; border:1px solid #DEE2E6; box-shadow:0px 2px 6px rgba(0,0,0,0.06); margin-bottom:18px; }
+div.stDownloadButton > button { background-color:#1C7ED6; color:white; border-radius:6px; padding:10px 18px; font-weight:600; border:none; transition: all 0.25s ease-in-out; }
+div.stDownloadButton > button:hover { background-color:#1864AB; transform: scale(1.03); }
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------
+# -----------------------------
 # Title Banner
-# -------------------------------------------------
+# -----------------------------
 st.markdown("""
 <div class="title-banner">
     <h1>Textify – Summarization & Analysis Platform</h1>
@@ -117,9 +74,9 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------
+# -----------------------------
 # Sidebar Input
-# -------------------------------------------------
+# -----------------------------
 st.sidebar.header("📥 Text Input")
 user_text = st.sidebar.text_area(
     "Paste text for analysis:",
@@ -129,9 +86,9 @@ user_text = st.sidebar.text_area(
 max_length = st.sidebar.slider("Maximum Summary Length", 50, 500, 150)
 min_length = st.sidebar.slider("Minimum Summary Length", 25, 300, 50)
 
-# -------------------------------------------------
+# -----------------------------
 # PDF Generator
-# -------------------------------------------------
+# -----------------------------
 def generate_invoice_pdf(result):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -150,7 +107,7 @@ def generate_invoice_pdf(result):
     pdf.set_font("Helvetica",size=10)
     pdf.cell(0,8,f"Generated On: {datetime.now().strftime('%d %b %Y, %H:%M')}",ln=True)
 
-    # Helper section
+    # Section helper
     def section(title):
         pdf.ln(6)
         pdf.set_font("Helvetica","B",13)
@@ -168,9 +125,14 @@ def generate_invoice_pdf(result):
     s = result["sentiment"]
     conf_pct = s["confidence"]*100
     pdf.cell(60,8,"Overall Sentiment:")
-    pdf.set_text_color(0,140,0 if s["overall_sentiment"]=="positive" else 180)
+    # FIX: Only pass 3 args to set_text_color
+    if s["overall_sentiment"]=="positive":
+        pdf.set_text_color(0,140,0)
+    else:
+        pdf.set_text_color(180,0,0)
     pdf.cell(0,8,s["overall_sentiment"].capitalize(),ln=True)
     pdf.set_text_color(0,0,0)
+
     pdf.cell(60,8,"Confidence Level:")
     if conf_pct <= 40: pdf.set_text_color(180,0,0)
     elif 50<=conf_pct<=60: pdf.set_text_color(255,140,0)
@@ -181,7 +143,7 @@ def generate_invoice_pdf(result):
     # Key Topics & Trends
     section("Key Topics & Trends")
     keywords = result.get("keywords", [])
-    pdf.set_font("Helvetica", size=11)
+    pdf.set_font("Helvetica",size=11)
     if keywords:
         mid = math.ceil(len(keywords)/2)
         for i in range(mid):
@@ -195,7 +157,7 @@ def generate_invoice_pdf(result):
     # Actionable Insights
     section("Actionable Insights")
     insights = result.get("insights", [])
-    pdf.set_font("Helvetica", size=11)
+    pdf.set_font("Helvetica",size=11)
     if insights:
         for ins in insights:
             pdf.multi_cell(0,8,clean(f"- {ins}"))
@@ -204,9 +166,9 @@ def generate_invoice_pdf(result):
 
     return pdf.output(dest="S").encode("latin-1")
 
-# -------------------------------------------------
+# -----------------------------
 # Analyze Button
-# -------------------------------------------------
+# -----------------------------
 if st.sidebar.button("🚀 Analyze Text"):
     if not user_text.strip():
         st.warning("Please enter some text to analyze.")
@@ -214,7 +176,7 @@ if st.sidebar.button("🚀 Analyze Text"):
         with st.spinner("Processing text..."):
             result = Textify().process_text(user_text)
 
-        # Header + Download
+        # Header + Download Button
         col1,col2 = st.columns([7,2])
         with col1:
             st.markdown('<div class="section-header">Analysis Results</div>', unsafe_allow_html=True)
@@ -556,6 +518,7 @@ if st.sidebar.button("🚀 Analyze Text"):
 #             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
 #         st.success("Analysis completed successfully.")
+
 
 
 
