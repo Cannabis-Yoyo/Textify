@@ -199,57 +199,130 @@ min_length = st.sidebar.slider("Minimum Summary Length", 25, 300, 50)
 # -----------------------------
 # PDF Generator (NEVER BLANK)
 # -----------------------------
-def generate_pdf(result):
+
+def generate_invoice_pdf(result):
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
-    font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
-    pdf.add_font("DejaVu", "", font_path, uni=True)
-    pdf.set_font("DejaVu", size=14)
+    def clean(t): return t.encode("latin-1", "ignore").decode("latin-1")
 
-    def safe(text):
-        return str(text).strip() if text else "N/A"
+    # Header
+    pdf.set_fill_color(11,60,93)
+    pdf.set_text_color(255,255,255)
+    pdf.set_font("Helvetica","B",18)
+    pdf.cell(0,14,"TEXTIFY ANALYSIS REPORT",ln=True,align="C",fill=True)
 
-    # Title
-    pdf.cell(0, 10, "TEXTIFY ANALYSIS REPORT", ln=True)
     pdf.ln(6)
+    pdf.set_text_color(0,0,0)
+    pdf.set_font("Helvetica",size=10)
+    pdf.cell(0,8,f"Generated On: {datetime.now().strftime('%d %b %Y, %H:%M')}",ln=True)
+
+    # Helper to make sections
+    def section(title):
+        pdf.ln(6)
+        pdf.set_font("Helvetica","B",13)
+        pdf.set_text_color(11,60,93)
+        pdf.cell(0,10,title,ln=True)
+        pdf.set_text_color(0,0,0)
 
     # Executive Summary
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(0, 8, "Executive Summary", ln=True)
-    pdf.set_font("DejaVu", size=10)
-    pdf.multi_cell(0, 7, safe(result["summary"]))
-    pdf.ln(4)
+    section("Executive Summary")
+    pdf.set_font("Helvetica",size=11)
+    pdf.multi_cell(0,8,clean(result["summary"]))
 
-    # Sentiment
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(0, 8, "Sentiment Analysis", ln=True)
-    pdf.set_font("DejaVu", size=10)
-
+    # Sentiment Analysis
+    section("Sentiment Analysis")
     s = result["sentiment"]
-    pdf.cell(0, 7, f"Overall Sentiment: {safe(s['overall_sentiment'])}", ln=True)
-    pdf.cell(0, 7, f"Confidence: {s['confidence']*100:.1f}%", ln=True)
-    pdf.ln(4)
+    conf_pct = s["confidence"]*100
+    pdf.cell(60,8,"Overall Sentiment:")
+    if s["overall_sentiment"]=="positive": pdf.set_text_color(0,140,0)
+    else: pdf.set_text_color(180,0,0)
+    pdf.cell(0,8,s["overall_sentiment"].capitalize(),ln=True)
+    pdf.set_text_color(0,0,0)
+    pdf.cell(60,8,"Confidence Level:")
+    if conf_pct <= 40: pdf.set_text_color(180,0,0)
+    elif 50<=conf_pct<=60: pdf.set_text_color(255,140,0)
+    else: pdf.set_text_color(0,140,0)
+    pdf.cell(0,8,f"{conf_pct:.1f}%",ln=True)
+    pdf.set_text_color(0,0,0)
 
-    # Keywords
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(0, 8, "Key Topics & Trends", ln=True)
-    pdf.set_font("DejaVu", size=10)
+    # Key Topics & Trends
+    section("Key Topics & Trends")
+    keywords = result.get("keywords", [])
+    pdf.set_font("Helvetica", size=11)  # same font as Executive Summary
+    if keywords:
+        mid = math.ceil(len(keywords)/2)
+        for i in range(mid):
+            left = keywords[i]
+            right = keywords[i+mid] if i+mid < len(keywords) else ""
+            pdf.cell(90,8,f"- {clean(left)}")
+            pdf.cell(0,8,f"- {clean(right)}",ln=True)
+    else:
+        pdf.cell(0,8,"No keywords detected",ln=True)
 
-    for k in result["keywords"]:
-        pdf.cell(0, 7, f"- {safe(k)}", ln=True)
-
-    pdf.ln(4)
-
-    # Insights
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(0, 8, "Actionable Insights", ln=True)
-    pdf.set_font("DejaVu", size=10)
-
-    for i in result["insights"]:
-        pdf.multi_cell(0, 7, f"- {safe(i)}")
+    # Actionable Insights
+    section("Actionable Insights")
+    insights = result.get("insights", [])
+    pdf.set_font("Helvetica", size=11)  # same font as Executive Summary
+    if insights:
+        for ins in insights:
+            pdf.multi_cell(0,8,clean(f"- {ins}"))
+    else:
+        pdf.cell(0,8,"No actionable insights found",ln=True)
 
     return pdf.output(dest="S").encode("latin-1")
+# def generate_pdf(result):
+#     pdf = FPDF()
+#     pdf.add_page()
+
+#     font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
+#     pdf.add_font("DejaVu", "", font_path, uni=True)
+#     pdf.set_font("DejaVu", size=14)
+
+#     def safe(text):
+#         return str(text).strip() if text else "N/A"
+
+#     # Title
+#     pdf.cell(0, 10, "TEXTIFY ANALYSIS REPORT", ln=True)
+#     pdf.ln(6)
+
+#     # Executive Summary
+#     pdf.set_font("DejaVu", size=12)
+#     pdf.cell(0, 8, "Executive Summary", ln=True)
+#     pdf.set_font("DejaVu", size=10)
+#     pdf.multi_cell(0, 7, safe(result["summary"]))
+#     pdf.ln(4)
+
+#     # Sentiment
+#     pdf.set_font("DejaVu", size=12)
+#     pdf.cell(0, 8, "Sentiment Analysis", ln=True)
+#     pdf.set_font("DejaVu", size=10)
+
+#     s = result["sentiment"]
+#     pdf.cell(0, 7, f"Overall Sentiment: {safe(s['overall_sentiment'])}", ln=True)
+#     pdf.cell(0, 7, f"Confidence: {s['confidence']*100:.1f}%", ln=True)
+#     pdf.ln(4)
+
+#     # Keywords
+#     pdf.set_font("DejaVu", size=12)
+#     pdf.cell(0, 8, "Key Topics & Trends", ln=True)
+#     pdf.set_font("DejaVu", size=10)
+
+#     for k in result["keywords"]:
+#         pdf.cell(0, 7, f"- {safe(k)}", ln=True)
+
+#     pdf.ln(4)
+
+#     # Insights
+#     pdf.set_font("DejaVu", size=12)
+#     pdf.cell(0, 8, "Actionable Insights", ln=True)
+#     pdf.set_font("DejaVu", size=10)
+
+#     for i in result["insights"]:
+#         pdf.multi_cell(0, 7, f"- {safe(i)}")
+
+#     return pdf.output(dest="S").encode("latin-1")
 
 
 # -----------------------------
@@ -353,6 +426,7 @@ if st.sidebar.button("🚀 Analyze Text"):
         )
 
         st.success("Analysis completed successfully.")
+
 
 
 
