@@ -5,7 +5,7 @@ import math
 from datetime import datetime
 import streamlit as st
 from fpdf import FPDF
-from textify import Textify
+from textify_core import Textify
 
 # -----------------------------
 # Streamlit Config
@@ -396,6 +396,7 @@ if st.sidebar.button("🚀 Analyze Text"):
 #             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
 #         st.success("Analysis completed successfully.")
+
 
 
 
