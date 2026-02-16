@@ -2,8 +2,7 @@ streamlit
 fpdf
 transformers
 torch
-nltk==3.8.1
-scikit-learn
 sentencepiece
+scikit-learn
 numpy
 pandas
