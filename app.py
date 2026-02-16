@@ -283,20 +283,63 @@ if st.sidebar.button("🚀 Analyze Text"):
         st.markdown(f"<div class='card'>{result['summary']}</div>", unsafe_allow_html=True)
 
         # Sentiment
+        # Sentiment Analysis (CLEAN DISPLAY)
+        sent = result["sentiment"]
+        conf_pct = sent["confidence"] * 100
+        
+        color_sent = "#198754" if sent["overall_sentiment"] == "positive" else "#DC3545"
+        color_conf = "#DC3545" if conf_pct < 40 else "#FFC107" if conf_pct < 60 else "#198754"
+        
         st.markdown('<div class="section-header">Sentiment Analysis</div>', unsafe_allow_html=True)
-        st.markdown(
-            f"<div class='card'>{result['sentiment']}</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown(f"""
+        <div class="card">
+            <p><b>Overall Sentiment:</b>
+               <span style="color:{color_sent}; font-weight:600;">
+                   {sent["overall_sentiment"].capitalize()}
+               </span>
+            </p>
+            <p><b>Confidence Level:</b>
+               <span style="color:{color_conf}; font-weight:600;">
+                   {conf_pct:.1f}%
+               </span>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
 
         # Keywords
+        # Key Topics & Trends (Two Columns)
+        keywords = result["keywords"]
+        mid = math.ceil(len(keywords) / 2)
+        
+        left = keywords[:mid]
+        right = keywords[mid:]
+        
         st.markdown('<div class="section-header">Key Topics & Trends</div>', unsafe_allow_html=True)
-        st.markdown(
-            "<div class='card'><ul>" +
-            "".join(f"<li>{k}</li>" for k in result["keywords"]) +
-            "</ul></div>",
-            unsafe_allow_html=True
-        )
+        
+        html_keywords = """
+        <div class="card">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+            <ul>
+        """
+        for k in left:
+            html_keywords += f"<li>{k}</li>"
+        
+        html_keywords += """
+            </ul>
+            <ul>
+        """
+        for k in right:
+            html_keywords += f"<li>{k}</li>"
+        
+        html_keywords += """
+            </ul>
+          </div>
+        </div>
+        """
+        
+        st.markdown(html_keywords, unsafe_allow_html=True)
+
 
         # Insights
         st.markdown('<div class="section-header">Actionable Insights</div>', unsafe_allow_html=True)
@@ -308,3 +351,4 @@ if st.sidebar.button("🚀 Analyze Text"):
         )
 
         st.success("Analysis completed successfully.")
+
