@@ -249,7 +249,8 @@ def generate_pdf(result):
     for i in result["insights"]:
         pdf.multi_cell(0, 7, f"- {safe(i)}")
 
-    return pdf.output(dest="S").encode("utf-8")
+    return pdf.output(dest="S").encode("latin-1")
+
 
 # -----------------------------
 # Analyze Button
@@ -352,5 +353,6 @@ if st.sidebar.button("🚀 Analyze Text"):
         )
 
         st.success("Analysis completed successfully.")
+
 
 
