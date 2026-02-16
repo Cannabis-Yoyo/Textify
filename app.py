@@ -348,7 +348,7 @@ if st.sidebar.button("🚀 Analyze Text"):
 
         st.download_button(
             "📄 Download Report",
-            generate_pdf(result),
+            generate_invoice_pdf(result),
             "Textify_Report.pdf",
             "application/pdf"
         )
@@ -426,6 +426,7 @@ if st.sidebar.button("🚀 Analyze Text"):
         )
 
         st.success("Analysis completed successfully.")
+
 
 
 
