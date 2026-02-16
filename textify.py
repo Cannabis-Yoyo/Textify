@@ -1,12 +1,7 @@
-from nlp_engine import NLPEngine
-from trends import TrendAnalyzer
-from insights import InsightExtractor
+from .nlp_engine import NLPEngine
+from .trends import extract_keywords
+from .insights import generate_insights
 
-# textify.py
-
-from nlp_engine import NLPEngine
-from trends import extract_keywords
-from insights import generate_insights
 
 
 class Textify:
@@ -52,4 +47,5 @@ if __name__ == "__main__":
     print("\n💡 INSIGHTS:")
     for insight in result["insights"]:
         print("-", insight)
+
 
