@@ -21,11 +21,14 @@ for pkg in required:
     except LookupError:
         nltk.download(pkg, download_dir=nltk_data_dir, quiet=True)
 
+
+from textify import Textify
+from fpdf import FPDF
+import streamlit as st
+import math
 from datetime import datetime
 import nltk
-import streamlit as st
-from fpdf import FPDF
-from textify import Textify
+
 
 
 # -------------------------------------------------
@@ -553,6 +556,7 @@ if st.sidebar.button("🚀 Analyze Text"):
 #             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
 #         st.success("Analysis completed successfully.")
+
 
 
 
