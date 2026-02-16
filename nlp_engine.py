@@ -1,14 +1,10 @@
-# nlp_engine.py (FINAL – NO NLTK – STREAMLIT SAFE)
+# nlp_engine.py (TRULY NLTK-FREE – STREAMLIT SAFE)
 
 from transformers import pipeline
-from nltk.tokenize.punkt import PunktSentenceTokenizer
 
 class NLPEngine:
     def __init__(self):
-        # Sentence tokenizer (NO punkt_tab)
-        self.sentence_tokenizer = PunktSentenceTokenizer()
-
-        # Sentiment model (NO vader)
+        # Sentiment model
         self.sentiment_model = pipeline(
             "sentiment-analysis",
             model="distilbert-base-uncased-finetuned-sst-2-english"
@@ -30,17 +26,13 @@ class NLPEngine:
         return result[0]["summary_text"]
 
     def analyze_sentiment(self, text):
-        sentences = self.sentence_tokenizer.tokenize(text)
-        results = self.sentiment_model(sentences[:10])  # cap for speed
+        # Transformers can handle long text directly
+        result = self.sentiment_model(text[:512])
 
-        score = sum(
-            r["score"] if r["label"] == "POSITIVE" else -r["score"]
-            for r in results
-        ) / len(results)
+        label = result[0]["label"]
+        score = result[0]["score"]
 
         return {
-            "overall_sentiment": "positive" if score >= 0 else "negative",
-            "confidence": round(abs(score), 2)
+            "overall_sentiment": "positive" if label == "POSITIVE" else "negative",
+            "confidence": round(score, 2)
         }
-
-
