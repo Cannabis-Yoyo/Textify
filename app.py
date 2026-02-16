@@ -5,13 +5,21 @@ from datetime import datetime
 import math
 import nltk
 
+# Download NLTK resources if not already present
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt', quiet=True)
 
-# ----------------------------
-# Download NLTK data
-# ----------------------------
-nltk.download("punkt")
-nltk.download("vader_lexicon")
-nltk.download("stopwords")
+try:
+    nltk.data.find('sentiment/vader_lexicon')
+except LookupError:
+    nltk.download('vader_lexicon', quiet=True)
+
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords', quiet=True)
 # -------------------------------------------------
 # App Configuration
 # -------------------------------------------------
@@ -247,4 +255,5 @@ if st.sidebar.button("🚀 Analyze Text"):
             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
+
 
