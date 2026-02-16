@@ -202,7 +202,8 @@ user_text = st.sidebar.text_area(
     height=280,
     placeholder="Paste your reports, emails, or articles here..."
 )
-
+max_length = st.sidebar.slider("Maximum Summary Length", 50, 500, 150)
+min_length = st.sidebar.slider("Minimum Summary Length", 25, 300, 50)
 # -----------------------------
 # PDF Generator (Unicode-safe, NO bold font)
 # -----------------------------
@@ -290,4 +291,5 @@ if st.sidebar.button("🚀 Analyze Text"):
         st.markdown(f"<div class='card'>{result.get('sentiment','')}</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
+
 
