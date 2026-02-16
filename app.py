@@ -1,6 +1,14 @@
 import nltk
+import os
 
-# Ensure necessary NLTK resources are downloaded
+# Create a local folder for NLTK data in Streamlit Cloud
+nltk_data_dir = os.path.join(os.getcwd(), "nltk_data")
+os.makedirs(nltk_data_dir, exist_ok=True)
+
+# Configure NLTK to look for data in this folder
+nltk.data.path.append(nltk_data_dir)
+
+# Download necessary NLTK packages if not already present
 nltk_packages = ["punkt", "vader_lexicon", "stopwords"]
 for pkg in nltk_packages:
     try:
@@ -11,7 +19,8 @@ for pkg in nltk_packages:
         else:
             nltk.data.find(f"corpora/{pkg}")
     except LookupError:
-        nltk.download(pkg, quiet=True)
+        nltk.download(pkg, download_dir=nltk_data_dir, quiet=True)
+
 
 
 import streamlit as st
@@ -271,6 +280,7 @@ if st.sidebar.button("🚀 Analyze Text"):
             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
+
 
 
 
