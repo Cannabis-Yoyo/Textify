@@ -3,7 +3,15 @@ from textify import Textify
 from fpdf import FPDF
 from datetime import datetime
 import math
+import nltk
 
+
+# ----------------------------
+# Download NLTK data
+# ----------------------------
+nltk.download("punkt")
+nltk.download("vader_lexicon")
+nltk.download("stopwords")
 # -------------------------------------------------
 # App Configuration
 # -------------------------------------------------
@@ -239,3 +247,4 @@ if st.sidebar.button("🚀 Analyze Text"):
             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
+
