@@ -2,7 +2,6 @@
 
 from transformers import pipeline
 from nltk.tokenize.punkt import PunktSentenceTokenizer
-import nltk
 
 class NLPEngine:
     def __init__(self):
@@ -43,4 +42,5 @@ class NLPEngine:
             "overall_sentiment": "positive" if score >= 0 else "negative",
             "confidence": round(abs(score), 2)
         }
+
 
