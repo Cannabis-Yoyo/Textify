@@ -1,5 +1,5 @@
 # ==============================
-# app.py (Updated & Deploy-Ready)
+# app.py (Deploy-Ready with NLTK fix)
 # ==============================
 
 import os
@@ -7,16 +7,19 @@ import math
 from datetime import datetime
 import streamlit as st
 from fpdf import FPDF
-import nltk
 
 # -----------------------------
-# Step 1: NLTK setup (must be first)
+# Step 0: Create local NLTK folder and set environment variable
 # -----------------------------
 nltk_data_dir = os.path.join(os.getcwd(), "nltk_data")
 os.makedirs(nltk_data_dir, exist_ok=True)
-nltk.data.path.insert(0, nltk_data_dir)
+os.environ["NLTK_DATA"] = nltk_data_dir  # <-- critical for Streamlit Cloud
 
-# Download required NLTK packages if missing
+# -----------------------------
+# Step 1: Import NLTK and download required packages
+# -----------------------------
+import nltk
+
 required_packages = ["punkt", "vader_lexicon", "stopwords"]
 for pkg in required_packages:
     try:
@@ -32,7 +35,7 @@ for pkg in required_packages:
 # -----------------------------
 # Step 2: Import Textify AFTER NLTK setup
 # -----------------------------
-from textify import Textify  # Your NLP processing module
+from textify import Textify
 
 # -----------------------------
 # Hugging Face token (optional)
@@ -107,7 +110,7 @@ def generate_invoice_pdf(result):
     pdf.set_font("Helvetica",size=10)
     pdf.cell(0,8,f"Generated On: {datetime.now().strftime('%d %b %Y, %H:%M')}",ln=True)
 
-    # Section helper
+    # Helper section
     def section(title):
         pdf.ln(6)
         pdf.set_font("Helvetica","B",13)
@@ -125,7 +128,6 @@ def generate_invoice_pdf(result):
     s = result["sentiment"]
     conf_pct = s["confidence"]*100
     pdf.cell(60,8,"Overall Sentiment:")
-    # FIX: Only pass 3 args to set_text_color
     if s["overall_sentiment"]=="positive":
         pdf.set_text_color(0,140,0)
     else:
@@ -174,6 +176,12 @@ if st.sidebar.button("🚀 Analyze Text"):
         st.warning("Please enter some text to analyze.")
     else:
         with st.spinner("Processing text..."):
+            # ===== FIX: NLTK punkt guaranteed before processing
+            try:
+                nltk.data.find("tokenizers/punkt")
+            except LookupError:
+                nltk.download("punkt", download_dir=nltk_data_dir, quiet=True)
+
             result = Textify().process_text(user_text)
 
         # Header + Download Button
@@ -233,6 +241,7 @@ if st.sidebar.button("🚀 Analyze Text"):
             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
+
 
 
 # import nltk
@@ -518,6 +527,7 @@ if st.sidebar.button("🚀 Analyze Text"):
 #             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
 #         st.success("Analysis completed successfully.")
+
 
 
 
