@@ -1,29 +1,32 @@
-# nlp_engine.py (FINAL – TRANSFORMERS 4.38+ SAFE)
+# nlp_engine.py (FINAL – VERSION-PROOF)
 
-from transformers import pipeline
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 
 class NLPEngine:
     def __init__(self):
-        # Sentiment analysis
+        # Sentiment
         self.sentiment_model = pipeline(
-            task="sentiment-analysis",
+            "sentiment-analysis",
             model="distilbert-base-uncased-finetuned-sst-2-english"
         )
 
-        # ✅ FIXED: summarization task name
+        # ✅ Explicit model loading (NO task registry)
+        tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
+        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/bart-large-cnn")
+
         self.summarizer = pipeline(
-            task="text2text-generation",
-            model="facebook/bart-large-cnn"
+            "text-generation",
+            model=model,
+            tokenizer=tokenizer
         )
 
     def summarize_text(self, text, max_length=150, min_length=50):
-        result = self.summarizer(
+        output = self.summarizer(
             text,
-            max_length=max_length,
-            min_length=min_length,
+            max_new_tokens=max_length,
             do_sample=False
         )
-        return result[0]["generated_text"]
+        return output[0]["generated_text"]
 
     def analyze_sentiment(self, text):
         sentences = [s for s in text.split(".") if s.strip()][:10]
