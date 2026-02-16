@@ -347,3 +347,5 @@ if st.sidebar.button("🚀 Analyze Text"):
             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
+
+
