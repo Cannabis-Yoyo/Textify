@@ -172,14 +172,6 @@ st.markdown("""
     box-shadow: 0px 2px 6px rgba(0,0,0,0.06);
     margin-bottom: 18px;
 }
-div.stDownloadButton > button {
-    background-color: #1C7ED6;
-    color: white;
-    border-radius: 6px;
-    padding: 10px 18px;
-    font-weight: 600;
-    border: none;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -200,12 +192,11 @@ st.sidebar.header("📥 Text Input")
 user_text = st.sidebar.text_area(
     "Paste text here",
     height=280,
-    placeholder="Paste your reports, emails, or articles here..."
+    placeholder="Paste reports, emails, or articles here..."
 )
-max_length = st.sidebar.slider("Maximum Summary Length", 50, 500, 150)
-min_length = st.sidebar.slider("Minimum Summary Length", 25, 300, 50)
+
 # -----------------------------
-# PDF Generator (Unicode-safe, NO bold font)
+# PDF Generator (NEVER BLANK)
 # -----------------------------
 def generate_pdf(result):
     pdf = FPDF()
@@ -213,57 +204,49 @@ def generate_pdf(result):
 
     font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
     pdf.add_font("DejaVu", "", font_path, uni=True)
-    pdf.set_font("DejaVu", size=16)
+    pdf.set_font("DejaVu", size=14)
 
-    def clean(t):
-        return str(t) if t else ""
+    def safe(text):
+        return str(text).strip() if text else "N/A"
 
     # Title
     pdf.cell(0, 10, "TEXTIFY ANALYSIS REPORT", ln=True)
     pdf.ln(6)
 
     # Executive Summary
-    pdf.set_font("DejaVu", size=13)
+    pdf.set_font("DejaVu", size=12)
     pdf.cell(0, 8, "Executive Summary", ln=True)
-    pdf.set_font("DejaVu", size=11)
-    pdf.multi_cell(0, 8, clean(result.get("summary", "")))
+    pdf.set_font("DejaVu", size=10)
+    pdf.multi_cell(0, 7, safe(result["summary"]))
     pdf.ln(4)
 
     # Sentiment
-    pdf.set_font("DejaVu", size=13)
+    pdf.set_font("DejaVu", size=12)
     pdf.cell(0, 8, "Sentiment Analysis", ln=True)
-    pdf.set_font("DejaVu", size=11)
+    pdf.set_font("DejaVu", size=10)
 
-    sentiment = result.get("sentiment", {})
-    pdf.cell(0, 8, f"Overall Sentiment: {clean(sentiment.get('overall_sentiment'))}", ln=True)
-    pdf.cell(0, 8, f"Confidence: {sentiment.get('confidence',0)*100:.1f}%", ln=True)
+    s = result["sentiment"]
+    pdf.cell(0, 7, f"Overall Sentiment: {safe(s['overall_sentiment'])}", ln=True)
+    pdf.cell(0, 7, f"Confidence: {s['confidence']*100:.1f}%", ln=True)
     pdf.ln(4)
 
     # Keywords
-    pdf.set_font("DejaVu", size=13)
+    pdf.set_font("DejaVu", size=12)
     pdf.cell(0, 8, "Key Topics & Trends", ln=True)
-    pdf.set_font("DejaVu", size=11)
+    pdf.set_font("DejaVu", size=10)
 
-    keywords = result.get("keywords", [])
-    if keywords:
-        for k in keywords:
-            pdf.cell(0, 8, f"- {clean(k)}", ln=True)
-    else:
-        pdf.cell(0, 8, "No keywords detected", ln=True)
+    for k in result["keywords"]:
+        pdf.cell(0, 7, f"- {safe(k)}", ln=True)
 
     pdf.ln(4)
 
     # Insights
-    pdf.set_font("DejaVu", size=13)
+    pdf.set_font("DejaVu", size=12)
     pdf.cell(0, 8, "Actionable Insights", ln=True)
-    pdf.set_font("DejaVu", size=11)
+    pdf.set_font("DejaVu", size=10)
 
-    insights = result.get("insights", [])
-    if insights:
-        for i in insights:
-            pdf.multi_cell(0, 8, f"- {clean(i)}")
-    else:
-        pdf.cell(0, 8, "No actionable insights found", ln=True)
+    for i in result["insights"]:
+        pdf.multi_cell(0, 7, f"- {safe(i)}")
 
     return pdf.output(dest="S").encode("utf-8")
 
@@ -275,7 +258,18 @@ if st.sidebar.button("🚀 Analyze Text"):
         st.warning("Please enter some text")
     else:
         with st.spinner("Processing..."):
-            result = Textify().process_text(user_text)
+            raw = Textify().process_text(user_text)
+
+        # 🔒 FORCE SAFE STRUCTURE
+        result = {
+            "summary": raw.get("summary") or "No summary generated.",
+            "sentiment": raw.get("sentiment") or {
+                "overall_sentiment": "neutral",
+                "confidence": 0.0
+            },
+            "keywords": raw.get("keywords") or ["No keywords detected"],
+            "insights": raw.get("insights") or ["No actionable insights found"]
+        }
 
         st.download_button(
             "📄 Download Report",
@@ -284,12 +278,33 @@ if st.sidebar.button("🚀 Analyze Text"):
             "application/pdf"
         )
 
+        # Executive Summary
         st.markdown('<div class="section-header">Executive Summary</div>', unsafe_allow_html=True)
-        st.markdown(f"<div class='card'>{result.get('summary','')}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card'>{result['summary']}</div>", unsafe_allow_html=True)
 
+        # Sentiment
         st.markdown('<div class="section-header">Sentiment Analysis</div>', unsafe_allow_html=True)
-        st.markdown(f"<div class='card'>{result.get('sentiment','')}</div>", unsafe_allow_html=True)
+        st.markdown(
+            f"<div class='card'>{result['sentiment']}</div>",
+            unsafe_allow_html=True
+        )
+
+        # Keywords
+        st.markdown('<div class="section-header">Key Topics & Trends</div>', unsafe_allow_html=True)
+        st.markdown(
+            "<div class='card'><ul>" +
+            "".join(f"<li>{k}</li>" for k in result["keywords"]) +
+            "</ul></div>",
+            unsafe_allow_html=True
+        )
+
+        # Insights
+        st.markdown('<div class="section-header">Actionable Insights</div>', unsafe_allow_html=True)
+        st.markdown(
+            "<div class='card'><ul>" +
+            "".join(f"<li>{i}</li>" for i in result["insights"]) +
+            "</ul></div>",
+            unsafe_allow_html=True
+        )
 
         st.success("Analysis completed successfully.")
-
-
