@@ -9,5 +9,3 @@ numpy
 pandas
 python-dateutil
 requests
-
-
