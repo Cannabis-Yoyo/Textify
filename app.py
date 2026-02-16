@@ -1,25 +1,41 @@
+import nltk
+
+# Ensure necessary NLTK resources are downloaded
+nltk_packages = ["punkt", "vader_lexicon", "stopwords"]
+for pkg in nltk_packages:
+    try:
+        if pkg == "punkt":
+            nltk.data.find("tokenizers/punkt")
+        elif pkg == "vader_lexicon":
+            nltk.data.find("sentiment/vader_lexicon")
+        else:
+            nltk.data.find(f"corpora/{pkg}")
+    except LookupError:
+        nltk.download(pkg, quiet=True)
+
+
 import streamlit as st
 from textify import Textify
 from fpdf import FPDF
 from datetime import datetime
 import math
-import nltk
+# import nltk
 
-# Download NLTK resources if not already present
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
+# # Download NLTK resources if not already present
+# try:
+#     nltk.data.find('tokenizers/punkt')
+# except LookupError:
+#     nltk.download('punkt', quiet=True)
 
-try:
-    nltk.data.find('sentiment/vader_lexicon')
-except LookupError:
-    nltk.download('vader_lexicon', quiet=True)
+# try:
+#     nltk.data.find('sentiment/vader_lexicon')
+# except LookupError:
+#     nltk.download('vader_lexicon', quiet=True)
 
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords', quiet=True)
+# try:
+#     nltk.data.find('corpora/stopwords')
+# except LookupError:
+#     nltk.download('stopwords', quiet=True)
 # -------------------------------------------------
 # App Configuration
 # -------------------------------------------------
@@ -255,5 +271,6 @@ if st.sidebar.button("🚀 Analyze Text"):
             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
         st.success("Analysis completed successfully.")
+
 
 
