@@ -1,31 +1,32 @@
 import os
 import math
-from datetime import datetime
 
+# Create local folder for NLTK
+nltk_data_dir = os.path.join(os.getcwd(), "nltk_data")
+os.makedirs(nltk_data_dir, exist_ok=True)
+
+# Make sure NLTK uses this folder first
+nltk.data.path.insert(0, nltk_data_dir)
+
+# Download only if missing
+required = ["punkt", "vader_lexicon", "stopwords"]
+for pkg in required:
+    try:
+        if pkg == "punkt":
+            nltk.data.find("tokenizers/punkt")
+        elif pkg == "vader_lexicon":
+            nltk.data.find("sentiment/vader_lexicon")
+        else:
+            nltk.data.find(f"corpora/{pkg}")
+    except LookupError:
+        nltk.download(pkg, download_dir=nltk_data_dir, quiet=True)
+
+from datetime import datetime
 import nltk
 import streamlit as st
 from fpdf import FPDF
 from textify import Textify
 
-# -------------------------------------------------
-# NLTK Setup (fix LookupError on Streamlit Cloud)
-# -------------------------------------------------
-nltk_data_dir = os.path.join(os.getcwd(), "nltk_data")
-os.makedirs(nltk_data_dir, exist_ok=True)
-nltk.data.path.append(nltk_data_dir)
-
-# Download required packages if missing
-nltk_packages = {
-    "punkt": "tokenizers/punkt",
-    "vader_lexicon": "sentiment/vader_lexicon",
-    "stopwords": "corpora/stopwords"
-}
-
-for pkg, path in nltk_packages.items():
-    try:
-        nltk.data.find(path)
-    except LookupError:
-        nltk.download(pkg, download_dir=nltk_data_dir, quiet=True)
 
 # -------------------------------------------------
 # Hugging Face token (optional for faster model downloads)
@@ -552,6 +553,7 @@ if st.sidebar.button("🚀 Analyze Text"):
 #             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
 #         st.success("Analysis completed successfully.")
+
 
 
 
