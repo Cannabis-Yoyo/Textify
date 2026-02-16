@@ -2,24 +2,25 @@ from nlp_engine import NLPEngine
 from trends import TrendAnalyzer
 from insights import InsightExtractor
 
+# textify.py
+
+from nlp_engine import NLPEngine
+from trends import extract_keywords
+from insights import generate_insights
+
+
 class Textify:
     def __init__(self):
         self.nlp = NLPEngine()
-        self.trends = TrendAnalyzer()
-        self.insights = InsightExtractor()
 
-    def process_text(self, text):
-        summary = self.nlp.summarize_text(text)
-        sentiment = self.nlp.analyze_sentiment(text)
-        keywords = self.trends.extract_keywords([text])
-        insights = self.insights.generate_insights(summary, sentiment, keywords)
-
+    def process_text(self, text, max_length=150, min_length=50):
         return {
-            "summary": summary,
-            "sentiment": sentiment,
-            "keywords": keywords,
-            "insights": insights
+            "summary": self.nlp.summarize_text(text, max_length, min_length),
+            "sentiment": self.nlp.analyze_sentiment(text),
+            "keywords": extract_keywords(text),
+            "insights": generate_insights(text)
         }
+
 
 
 def get_user_input():
@@ -51,3 +52,4 @@ if __name__ == "__main__":
     print("\n💡 INSIGHTS:")
     for insight in result["insights"]:
         print("-", insight)
+
