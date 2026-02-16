@@ -1,6 +1,7 @@
-from .nlp_engine import NLPEngine
-from .trends import extract_keywords
-from .insights import generate_insights
+from nlp_engine import NLPEngine
+from trends import extract_keywords
+from insights import generate_insights
+
 
 
 
@@ -47,5 +48,6 @@ if __name__ == "__main__":
     print("\n💡 INSIGHTS:")
     for insight in result["insights"]:
         print("-", insight)
+
 
 
