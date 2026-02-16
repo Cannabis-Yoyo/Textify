@@ -1,59 +1,45 @@
-import torch
-import nltk
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
-from nltk.tokenize import sent_tokenize
+# nlp_engine.py (FIXED FOR STREAMLIT + PYTHON 3.13)
 
-nltk.download("punkt")
+import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.tokenize.punkt import PunktSentenceTokenizer
+from transformers import pipeline
 
 
 class NLPEngine:
     def __init__(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Initialize sentiment analyzer
+        self.sentiment_analyzer = SentimentIntensityAnalyzer()
 
-        # ✅ MANUAL SUMMARIZATION MODEL (NO PIPELINE)
-        self.tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
-        self.model = AutoModelForSeq2SeqLM.from_pretrained("facebook/bart-large-cnn")
-        self.model.to(self.device)
+        # Sentence tokenizer (NO punkt_tab dependency)
+        self.sentence_tokenizer = PunktSentenceTokenizer()
 
-        # ✅ SENTIMENT PIPELINE (THIS ONE WORKS)
-        self.sentiment_analyzer = pipeline(
-            "sentiment-analysis",
-            model="distilbert-base-uncased-finetuned-sst-2-english"
+        # Summarization pipeline
+        self.summarizer = pipeline(
+            "summarization",
+            model="facebook/bart-large-cnn"
         )
 
     def summarize_text(self, text, max_length=150, min_length=50):
-        if len(text.split()) < 100:
-            return text
-
-        inputs = self.tokenizer(
+        summary = self.summarizer(
             text,
-            return_tensors="pt",
-            truncation=True,
-            max_length=1024
-        )
-
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
-
-        summary_ids = self.model.generate(
-            inputs["input_ids"],
             max_length=max_length,
             min_length=min_length,
-            num_beams=4,
-            early_stopping=True
+            do_sample=False
         )
-
-        return self.tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+        return summary[0]["summary_text"]
 
     def analyze_sentiment(self, text):
-        sentences = sent_tokenize(text)
-        results = self.sentiment_analyzer(sentences)
+        # 🔥 FIX: NO sent_tokenize()
+        sentences = self.sentence_tokenizer.tokenize(text)
 
-        scores = {"positive": 0, "negative": 0}
-        for r in results:
-            scores[r["label"].lower()] += r["score"]
+        scores = [self.sentiment_analyzer.polarity_scores(s)["compound"] for s in sentences]
+        avg_score = sum(scores) / len(scores) if scores else 0
 
-        total = sum(scores.values())
+        sentiment = "positive" if avg_score >= 0 else "negative"
+        confidence = abs(avg_score)
+
         return {
-            "overall_sentiment": max(scores, key=scores.get),
-            "confidence": round(max(scores.values()) / total, 2)
+            "overall_sentiment": sentiment,
+            "confidence": round(confidence, 2)
         }
