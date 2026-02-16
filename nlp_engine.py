@@ -1,18 +1,18 @@
-# nlp_engine.py (TRULY NLTK-FREE – STREAMLIT SAFE)
+# nlp_engine.py (FINAL – TRANSFORMERS 4.38+ SAFE)
 
 from transformers import pipeline
 
 class NLPEngine:
     def __init__(self):
-        # Sentiment model
+        # Sentiment analysis
         self.sentiment_model = pipeline(
-            "sentiment-analysis",
+            task="sentiment-analysis",
             model="distilbert-base-uncased-finetuned-sst-2-english"
         )
 
-        # Summarizer
+        # ✅ FIXED: summarization task name
         self.summarizer = pipeline(
-            "summarization",
+            task="text2text-generation",
             model="facebook/bart-large-cnn"
         )
 
@@ -23,16 +23,18 @@ class NLPEngine:
             min_length=min_length,
             do_sample=False
         )
-        return result[0]["summary_text"]
+        return result[0]["generated_text"]
 
     def analyze_sentiment(self, text):
-        # Transformers can handle long text directly
-        result = self.sentiment_model(text[:512])
+        sentences = [s for s in text.split(".") if s.strip()][:10]
+        results = self.sentiment_model(sentences)
 
-        label = result[0]["label"]
-        score = result[0]["score"]
+        score = sum(
+            r["score"] if r["label"] == "POSITIVE" else -r["score"]
+            for r in results
+        ) / len(results)
 
         return {
-            "overall_sentiment": "positive" if label == "POSITIVE" else "negative",
-            "confidence": round(score, 2)
+            "overall_sentiment": "positive" if score >= 0 else "negative",
+            "confidence": round(abs(score), 2)
         }
