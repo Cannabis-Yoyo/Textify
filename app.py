@@ -202,55 +202,92 @@ min_length = st.sidebar.slider("Minimum Summary Length", 25, 300, 50)
 
 def generate_pdf(result):
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
+    # Load Unicode font
     font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
     pdf.add_font("DejaVu", "", font_path, uni=True)
-    pdf.set_font("DejaVu", size=14)
+    pdf.set_font("DejaVu", size=11)
 
     def safe(text):
         return str(text).strip() if text else "N/A"
 
-    # Title
-    pdf.cell(0, 10, "TEXTIFY ANALYSIS REPORT", ln=True)
+    # =============================
+    # HEADER BANNER
+    # =============================
+    pdf.set_fill_color(11, 60, 93)        # #0B3C5D
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("DejaVu", size=16)
+    pdf.cell(0, 14, "TEXTIFY ANALYSIS REPORT", ln=True, fill=True, align="C")
     pdf.ln(6)
 
-    # Executive Summary
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(0, 8, "Executive Summary", ln=True)
-    pdf.set_font("DejaVu", size=10)
-    pdf.multi_cell(0, 7, safe(result["summary"]))
-    pdf.ln(4)
+    pdf.set_text_color(0, 0, 0)
 
-    # Sentiment
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(0, 8, "Sentiment Analysis", ln=True)
-    pdf.set_font("DejaVu", size=10)
+    # Helper for section titles
+    def section(title):
+        pdf.ln(4)
+        pdf.set_font("DejaVu", size=13)
+        pdf.set_text_color(11, 60, 93)
+        pdf.cell(0, 10, title, ln=True)
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font("DejaVu", size=11)
 
+    # =============================
+    # EXECUTIVE SUMMARY
+    # =============================
+    section("Executive Summary")
+    pdf.multi_cell(0, 8, safe(result["summary"]))
+
+    # =============================
+    # SENTIMENT ANALYSIS
+    # =============================
+    section("Sentiment Analysis")
     s = result["sentiment"]
-    pdf.cell(0, 7, f"Overall Sentiment: {safe(s['overall_sentiment'])}", ln=True)
-    pdf.cell(0, 7, f"Confidence: {s['confidence']*100:.1f}%", ln=True)
-    pdf.ln(4)
+    conf_pct = s["confidence"] * 100
 
-    # Keywords
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(0, 8, "Key Topics & Trends", ln=True)
-    pdf.set_font("DejaVu", size=10)
+    pdf.cell(60, 8, "Overall Sentiment:")
+    if s["overall_sentiment"] == "positive":
+        pdf.set_text_color(25, 135, 84)   # green
+    else:
+        pdf.set_text_color(220, 53, 69)   # red
+    pdf.cell(0, 8, s["overall_sentiment"].capitalize(), ln=True)
 
-    for k in result["keywords"]:
-        pdf.cell(0, 7, f"- {safe(k)}", ln=True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(60, 8, "Confidence Level:")
 
-    pdf.ln(4)
+    if conf_pct < 40:
+        pdf.set_text_color(220, 53, 69)
+    elif conf_pct < 60:
+        pdf.set_text_color(255, 193, 7)
+    else:
+        pdf.set_text_color(25, 135, 84)
 
-    # Insights
-    pdf.set_font("DejaVu", size=12)
-    pdf.cell(0, 8, "Actionable Insights", ln=True)
-    pdf.set_font("DejaVu", size=10)
+    pdf.cell(0, 8, f"{conf_pct:.1f}%", ln=True)
+    pdf.set_text_color(0, 0, 0)
 
-    for i in result["insights"]:
-        pdf.multi_cell(0, 7, f"- {safe(i)}")
+    # =============================
+    # KEY TOPICS & TRENDS (2 COL)
+    # =============================
+    section("Key Topics & Trends")
+    keywords = result["keywords"]
+    mid = math.ceil(len(keywords) / 2)
+
+    for i in range(mid):
+        left = keywords[i]
+        right = keywords[i + mid] if i + mid < len(keywords) else ""
+        pdf.cell(90, 8, f"- {safe(left)}")
+        pdf.cell(0, 8, f"- {safe(right)}", ln=True)
+
+    # =============================
+    # ACTIONABLE INSIGHTS
+    # =============================
+    section("Actionable Insights")
+    for ins in result["insights"]:
+        pdf.multi_cell(0, 8, f"- {safe(ins)}")
 
     return pdf.output(dest="S").encode("latin-1")
+
 
 
 # -----------------------------
@@ -354,6 +391,7 @@ if st.sidebar.button("🚀 Analyze Text"):
         )
 
         st.success("Analysis completed successfully.")
+
 
 
 
