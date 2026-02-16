@@ -64,6 +64,9 @@ st.markdown("""
 st.sidebar.header("📥 Text Input")
 user_text = st.sidebar.text_area("Paste text here", height=280)
 
+max_length = st.sidebar.slider("Maximum Summary Length", 50, 500, 150)
+min_length = st.sidebar.slider("Minimum Summary Length", 25, 300, 50)
+
 # -----------------------------
 # PDF Generator
 # -----------------------------
@@ -393,6 +396,7 @@ if st.sidebar.button("🚀 Analyze Text"):
 #             st.markdown("<div class='card'>No actionable insights found</div>", unsafe_allow_html=True)
 
 #         st.success("Analysis completed successfully.")
+
 
 
 
